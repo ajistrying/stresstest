@@ -2,7 +2,8 @@
 const colors = require('tailwindcss/colors')
 
 export default {
-  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  darkMode: 'media',
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}', './node_modules/flowbite/**/*.js'],
   theme: {
     extend: {
       colors: {
@@ -21,9 +22,9 @@ export default {
         },
         black_mute: '#282828',
         black_soft: '#222222',
-        black_alt: '#181818',
+        black_alt: '#181818'
       }
     }
   },
-  plugins: [require('@tailwindcss/forms')]
+  plugins: [require('@tailwindcss/forms'), require('flowbite/plugin')]
 }

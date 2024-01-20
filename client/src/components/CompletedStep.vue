@@ -1,5 +1,5 @@
 <template>
-  <span class="flex items-center px-6 py-4 text-sm font-medium light:text-black">
+  <span class="flex items-center px-6 py-4 text-lg font-medium light:text-black">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       class="icon icon-tabler icon-tabler-circle-check-filled text-black dark:text-cyan-600 h-10 w-10"
@@ -17,7 +17,7 @@
         fill="currentColor"
       />
     </svg>
-    <span class="ml-4 text-sm font-medium dark:text-white">
+    <span class="ml-4 font-medium dark:text-white">
       <slot name="title"></slot>
     </span>
   </span>

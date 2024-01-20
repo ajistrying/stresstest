@@ -3,7 +3,6 @@ import { RouterLink, RouterView } from 'vue-router'
 
 const theme = localStorage.getItem('theme') || 'light'
 document.documentElement.dataset.theme = theme
-console.log(window.matchMedia("(prefers-color-scheme: dark)").matches)
 </script>
 
 <template>
