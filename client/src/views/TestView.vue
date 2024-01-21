@@ -6,45 +6,60 @@ import UpcomingStep from '../components/UpcomingStep.vue'
 import { ref } from 'vue'
 import isUrlHttp from 'is-url-http'
 
-const props = defineProps({
-  testSettings: {
-    type: Object,
-    default: () => {
-      return {
-        url: '',
-        duration: 0,
-        concurrentUsers: 0,
-        rampUpTime: 0,
-        rampUpSteps: 0,
-        rampUpInterval: 0,
-        rampDownTime: 0,
-        rampDownSteps: 0,
-        rampDownInterval: 0,
-        method: 'GET',
-        headers: [],
-        body: ''
-      }
-    }
-  }
-})
-
 const submitStepOne = (urlInput) => {
-  props.testSettings.url = urlInput
+  testSettings.url = urlInput
   testStep.value = 2
 }
 
 const urlIsValid = (url) => {
   return isUrlHttp(url)
 }
-const concurrentUsers = ref(1)
 const currentHTTPMethod = ref('GET')
-const urlInput = ref('')
+const items = ref([{ name: '', value: '' }])
+const addItem = () => {
+  items.value.push({ value: '' })
+}
+const removeItem = (item) => {
+  items.value.splice(items.value.indexOf(item), 1)
+}
+const logOptions = () => {
+  console.log(JSON.parse(JSON.stringify(items.value)))
+}
 const testStep = ref(2)
 const testComplete = ref(false)
+const testSettings = ref({
+  url: 'http://www.google.com',
+  duration: 0,
+  concurrentUsers: 1,
+  method: 'GET',
+  headers: {
+    accept: '*/*',
+    cacheControl: 'no-cache',
+    userAgent: 'StressTestTool/1.0.0',
+    contentType: 'application/json'
+  },
+  body: ''
+})
 </script>
 
 <template>
-  <div class="m-auto w-3/4 lg:mt-20 space-y-8">
+  <div class="m-auto w-3/4 h-screen space-y-8">
+    <div class="flex space-x-4">
+      <button
+        type="submit"
+        class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="console.log(JSON.parse(JSON.stringify(testSettings)))"
+      >
+        <span class="sr-only">Log Settings</span>
+        Log Settings
+      </button>
+      <button
+        @click="logOptions"
+        class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Log Options
+      </button>
+    </div>
     <!-- Steps -->
     <nav aria-label="Progress">
       <ol
@@ -121,173 +136,352 @@ const testComplete = ref(false)
       </ol>
     </nav>
 
-    <div v-if="testStep == 1" class="space-y-4">
-      <h1 class="text-2xl">Let's start with the URL you'd like to test</h1>
+    <div v-show="testStep == 1">
+      <div class="w-full space-y-6">
+        <!-- URL -->
+        <div>
+          <h1 class="font-semibold text-2xl">Let's start with the URL you'd like to test</h1>
+          <label for="search" class="sr-only">Search</label>
+          <form @submit.prevent="onSubmit" class="flex gap-4">
+            <div class="relative w-3/4">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <IconTestPipe class="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
 
-      <div class="w-full">
-        <label for="search" class="sr-only">Search</label>
-        <form @submit.prevent="onSubmit" class="flex gap-4">
-          <div class="relative w-3/4">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <IconTestPipe class="h-5 w-5 text-gray-400" aria-hidden="true" />
+              <input
+                id="search"
+                name="search"
+                v-model="testSettings.url"
+                class="w-full block rounded-md border-0 bg-white h-full py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-500 sm:text-lg sm:leading-6"
+                placeholder="Enter a URL to stress test"
+                type="search"
+              />
             </div>
+          </form>
+        </div>
 
-            <input
-              id="search"
-              name="search"
-              v-model="urlInput"
-              class="w-full block rounded-md border-0 bg-white h-full py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-500 sm:text-lg sm:leading-6"
-              placeholder="Enter a URL to stress test"
-              type="search"
-            />
-          </div>
+        <!-- HTTP METHOD -->
+        <div>
+          <h1 class="font-semibold text-2xl">HTTP Method</h1>
+          <span class="text-lg"> Choose the HTTP method you'd like to use for your test. </span>
+          <fieldset class="mt-2 text-white">
+            <legend class="sr-only">Choose a memory option</legend>
+            <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
+              <label
+                class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
+                :class="{
+                  'bg-cyan-600 text-white': currentHTTPMethod == 'GET',
+                  'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
+                    currentHTTPMethod != 'GET'
+                }"
+                @click="
+                  () => {
+                    currentHTTPMethod = 'GET'
+                    testSettings.method = 'GET'
+                  }
+                "
+              >
+                <input
+                  type="radio"
+                  name="http-method"
+                  value="GET"
+                  class="sr-only"
+                  aria-labelledby="memory-option-0-label"
+                />
+                <span id="memory-option-0-label">GET</span>
+              </label>
+
+              <label
+                class="flex items-center justify-center font-semibold rounded-md border-cyan-500 py-3 px-3 text-md uppercase sm:flex-1 cursor-pointer focus:outline-none"
+                :class="{
+                  'bg-cyan-600 text-white': currentHTTPMethod == 'POST',
+                  'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
+                    currentHTTPMethod != 'POST'
+                }"
+                @click="
+                  () => {
+                    currentHTTPMethod = 'POST'
+                    testSettings.method = 'POST'
+                  }
+                "
+              >
+                <input
+                  type="radio"
+                  name="http-method"
+                  value="POST"
+                  class="sr-only"
+                  aria-labelledby="memory-option-1-label"
+                />
+                <span id="memory-option-1-label">POST</span>
+              </label>
+
+              <label
+                class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
+                :class="{
+                  'bg-cyan-600 text-white': currentHTTPMethod == 'PUT',
+                  'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
+                    currentHTTPMethod != 'PUT'
+                }"
+                @click="
+                  () => {
+                    currentHTTPMethod = 'PUT'
+                    testSettings.method = 'PUT'
+                  }
+                "
+              >
+                <input
+                  type="radio"
+                  name="http-method"
+                  value="PUT"
+                  class="sr-only"
+                  aria-labelledby="memory-option-2-label"
+                />
+                <span id="memory-option-2-label">PUT</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- CONCURRENT USERS -->
+        <div>
+          <h1 class="font-semibold text-2xl">
+            Number of Users: {{ testSettings.concurrentUsers }}
+          </h1>
+          <span class="text-lg"> Choose the number of users you'd like to simulate.</span>
+          <input
+            id="default-range"
+            type="range"
+            v-model.number="testSettings.concurrentUsers"
+            class="w-3/4 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+            min="1"
+            max="1000"
+            step="1"
+          />
+        </div>
+
+        <!-- NAV BUTTONS -->
+        <div class="flex w-full justify-end">
           <button
             type="submit"
-            class="items-center w-1/4 px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="submitStepOne(urlInput)"
-            :disabled="!urlInput || !urlIsValid(urlInput)"
+            class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="testStep = 2"
+            :disabled="!testSettings.url || !urlIsValid(testSettings.url)"
           >
             <span class="sr-only">Test</span>
-            Test
+            Next
+            <IconArrowRight class="h-5 w-5 text-white ml-1" aria-hidden="true" />
           </button>
-        </form>
+        </div>
       </div>
     </div>
 
-    <div v-if="testStep == 2" class="space-y-10">
+    <div v-show="testStep == 2" class="space-y-6">
       <div class="flex flex-col lg:flex-row gap-10">
-        <div class="w-3/5 space-y-10">
-          <!-- HTTP METHOD SETTING -->
+        <!-- LEFT SIDE -->
+        <div
+          class="space-y-4"
+          :class="{
+            'lg:w-1/2': testSettings.method == 'GET',
+            'lg:w-1/2': testSettings.method == 'POST' || testSettings.method == 'PUT'
+          }"
+        >
           <div>
-            <h1 class="font-semibold text-2xl">HTTP Method</h1>
-            <span>
-              Choose the HTTP method you'd like to use for your test. GET is the default method.
-            </span>
-            <fieldset class="mt-2 text-white">
-              <legend class="sr-only">Choose a memory option</legend>
-              <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                <!--
-        In Stock: "cursor-pointer", Out of Stock: "opacity-25 cursor-not-allowed"
-        Active: "ring-2 ring-indigo-600 ring-offset-2"
-        Checked: "bg-indigo-600 text-white hover:bg-indigo-500", Not Checked: "ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-        -->
-                <label
-                  class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
-                  :class="{
-                    'bg-cyan-600 text-white': currentHTTPMethod == 'GET',
-                    'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                      currentHTTPMethod != 'GET'
-                  }"
-                  @click="
-                    () => {
-                      currentHTTPMethod = 'GET'
-                      props.testSettings.method = 'GET'
-                    }
-                  "
-                >
-                  <input
-                    type="radio"
-                    name="http-method"
-                    value="GET"
-                    class="sr-only"
-                    aria-labelledby="memory-option-0-label"
-                  />
-                  <span id="memory-option-0-label">GET</span>
-                </label>
-
-                <label
-                  class="flex items-center justify-center font-semibold rounded-md border-cyan-500 py-3 px-3 text-md uppercase sm:flex-1 cursor-pointer focus:outline-none"
-                  :class="{
-                    'bg-cyan-600 text-white': currentHTTPMethod == 'POST',
-                    'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                      currentHTTPMethod != 'POST'
-                  }"
-                  @click="
-                    () => {
-                      currentHTTPMethod = 'POST'
-                      props.testSettings.method = 'POST'
-                    }
-                  "
-                >
-                  <input
-                    type="radio"
-                    name="http-method"
-                    value="POST"
-                    class="sr-only"
-                    aria-labelledby="memory-option-1-label"
-                  />
-                  <span id="memory-option-1-label">POST</span>
-                </label>
-
-                <label
-                  class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
-                  :class="{
-                    'bg-cyan-600 text-white': currentHTTPMethod == 'PUT',
-                    'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                      currentHTTPMethod != 'PUT'
-                  }"
-                  @click="
-                    () => {
-                      currentHTTPMethod = 'PUT'
-                      props.testSettings.method = 'PUT'
-                    }
-                  "
-                >
-                  <input
-                    type="radio"
-                    name="http-method"
-                    value="PUT"
-                    class="sr-only"
-                    aria-labelledby="memory-option-2-label"
-                  />
-                  <span id="memory-option-2-label">PUT</span>
-                </label>
-
-                <label
-                  class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
-                  :class="{
-                    'bg-cyan-600 text-white': currentHTTPMethod == 'DELETE',
-                    'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                      currentHTTPMethod != 'DELETE'
-                  }"
-                  @click="
-                    () => {
-                      currentHTTPMethod = 'DELETE'
-                      props.testSettings.method = 'DELETE'
-                    }
-                  "
-                >
-                  <input
-                    type="radio"
-                    name="http-method"
-                    value="DELETE"
-                    class="sr-only"
-                    aria-labelledby="memory-option-3-label"
-                  />
-                  <span id="memory-option-3-label">DELETE</span>
-                </label>
-              </div>
-            </fieldset>
+            <h1 class="font-semibold text-2xl">HTTP Headers</h1>
+            <span class="text-lg"> Choose the HTTP headers you'd like to use for your test </span>
           </div>
 
-          <!-- USER SETTINGS -->
+          <!-- ACCEPT HEADER OPTION -->
           <div>
-            <h1 class="font-semibold text-2xl">Number of Users {{ concurrentUsers }}</h1>
-            <span> Choose the number of users you'd like to simulate </span>
+            <div class="flex flex-col mb-2">
+              <label
+                for="countries"
+                class="block text-lg font-medium text-gray-900 dark:text-white"
+              >
+                Accept Header
+              </label>
+              <span class="text-sm text-cyan-600 cursor-pointer">What is an Accept Header?</span>
+            </div>
+            <select
+              id="countries"
+              class="bg-cyan-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
+              v-model="testSettings.headers.accept"
+            >
+              <option selected value="*/*">*/*</option>
+              <option value="application/json">application/json</option>
+              <option value="text/html">text/html</option>
+              <option value="text/plain">text/plain</option>
+              <option value="application/xml">application/xml</option>
+              <option value="application/pdf">application/pdf</option>
+              <option value="image/png">image/png</option>
+              <option value="image/jpeg">image/jpeg</option>
+              <option value="image/gif">image/gif</option>
+              <option value="application/javascript">application/javascript</option>
+              <option value="application/zip">application/zip</option>
+              <option value="application/x-www-form-urlencoded">
+                application/x-www-form-urlencoded
+              </option>
+              <option value="multipart/form-data">multipart/form-data</option>
+            </select>
+          </div>
+
+          <!-- CACHE CONTROL HEADER -->
+          <div>
+            <div class="flex flex-col mb-2">
+              <label
+                for="countries"
+                class="block text-lg font-medium text-gray-900 dark:text-white"
+              >
+                Cache Control Header
+              </label>
+              <span class="text-sm text-cyan-600 cursor-pointer">
+                What is a Cache Control Header?
+              </span>
+            </div>
+            <select
+              id="countries"
+              class="bg-cyan-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
+              v-model="testSettings.headers.cacheControl"
+            >
+              <option selected value="no-cache">no-cache</option>
+              <option value="no-store">no-store</option>
+              <option value="no-transform">no-transform</option>
+              <option value="only-if-cached">only-if-cached</option>
+              <option value="max-age">max-age</option>
+              <option value="max-stale">max-stale</option>
+              <option value="min-fresh">min-fresh</option>
+              <option value="stale-if-error">stale-if-error</option>
+              <option value="custom">custom</option>
+            </select>
             <input
-              id="default-range"
-              type="range"
-              v-model="concurrentUsers"
-              class="w-3/4 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-              min="1"
-              max="1000"
-              step="1"
+              type="text"
+              class="mt-2 w-full rounded-lg border border-cyan-300 text-gray-900 text-sm focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
+              placeholder="Custom Cache Control Header"
+              :class="{
+                hidden: testSettings.headers.cacheControl != 'custom',
+                block: testSettings.headers.cacheControl == 'custom'
+              }"
+            />
+          </div>
+
+          <!-- USER AGENT HEADER WITH "StressTestTool/1.0.0 as default" -->
+          <div>
+            <div class="flex flex-col mb-2">
+              <label
+                for="countries"
+                class="block text-lg font-medium text-gray-900 dark:text-white"
+              >
+                User Agent Header
+              </label>
+              <span class="text-sm text-cyan-600 cursor-pointer">
+                What is a User Agent Header?
+              </span>
+            </div>
+            <input
+              type="text"
+              class="mt-2 w-full rounded-lg border border-cyan-300 text-gray-900 text-sm focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
+              placeholder="Custom User Agent Header"
+              v-model="testSettings.headers.userAgent"
+            />
+          </div>
+
+          <!-- CONTENT TYPE -->
+          <div v-show="testSettings.method == 'PUT' || testSettings.method == 'POST'">
+            <div class="flex flex-col mb-2">
+              <label
+                for="countries"
+                class="block text-lg font-medium text-gray-900 dark:text-white"
+              >
+                Content Type Header
+              </label>
+              <span class="text-sm text-cyan-600 cursor-pointer">
+                What is a Content Type Header?
+              </span>
+            </div>
+            <select
+              id="countries"
+              class="bg-cyan-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
+              v-model="testSettings.headers.contentType"
+            >
+              <option selected value="application/json">application/json</option>
+              <option value="text/html">text/html</option>
+              <option value="text/plain">text/plain</option>
+              <option value="application/xml">application/xml</option>
+              <option value="application/pdf">application/pdf</option>
+              <option value="image/png">image/png</option>
+              <option value="image/jpeg">image/jpeg</option>
+              <option value="image/gif">image/gif</option>
+              <option value="application/javascript">application/javascript</option>
+              <option value="application/zip">application/zip</option>
+              <option value="application/x-www-form-urlencoded">
+                application/x-www-form-urlencoded
+              </option>
+              <option value="multipart/form-data">multipart/form-data</option>
+              <option value="custom">custom</option>
+            </select>
+            <input
+              type="text"
+              class="mt-2 w-full rounded-lg border border-cyan-300 text-gray-900 text-sm focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
+              placeholder="Custom Content Type Header"
+              :class="{
+                hidden: testSettings.headers.contentType != 'custom',
+                block: testSettings.headers.contentType == 'custom'
+              }"
             />
           </div>
         </div>
-        <div class="w-2/5">asdada</div>
-      </div>
 
+        <!-- RIGHT SIDE -->
+        <div
+          class="space-y-6"
+          :class="{
+            'lg:w-1/2': testSettings.method == 'GET',
+            'lg:w-1/2': testSettings.method == 'POST' || testSettings.method == 'PUT'
+          }"
+        >
+          <!-- POST BODY OPTIONS -->
+          <div class="w-fit" v-show="testSettings.method == 'POST' || testSettings.method == 'PUT'">
+            <h1 class="font-semibold text-2xl">HTTP Body</h1>
+            <span class="text-lg"> Add any HTTP body options you'd like to use for your test </span>
+
+            <div class="mt-2 w-fit">
+              <div v-for="item in items" class="flex space-x-2 mb-4">
+                <input
+                  class="text-black border rounded-lg"
+                  placeholder="Enter a key"
+                  type="search"
+                  v-model="item.name"
+                />
+                <input
+                  class="text-black border rounded-lg"
+                  placeholder="Enter a value"
+                  type="search"
+                  v-model="item.value"
+                />
+                <button
+                  @click="() => removeItem(item)"
+                  class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  v-show="items.indexOf(item) != 0"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <div class="flex justify-end">
+                <button
+                  @click="addItem"
+                  class="w-full items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ADVANCED SETTINGS -->
+          <!-- DURATION -->
+          <div></div>
+        </div>
+      </div>
       <!-- NAV BUTTONS -->
       <div class="flex w-full justify-between">
         <button
@@ -303,15 +497,19 @@ const testComplete = ref(false)
           type="submit"
           class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="testStep = 3"
+          :disabled="
+            (items.length == 0 || items[0].name == '' || items[0].value == '') &&
+            (testSettings.method == 'POST' || testSettings.method == 'PUT')
+          "
         >
           <span class="sr-only">Test</span>
-          Forward
+          Next
           <IconArrowRight class="h-5 w-5 text-white ml-1" aria-hidden="true" />
         </button>
       </div>
     </div>
 
-    <div v-if="testStep == 3">
+    <div v-show="testStep == 3">
       <h1 class="text-2xl">Test Results</h1>
       <button
         type="submit"
