@@ -5,11 +5,12 @@ import CompletedStep from '../components/CompletedStep.vue'
 import UpcomingStep from '../components/UpcomingStep.vue'
 import { ref } from 'vue'
 import isUrlHttp from 'is-url-http'
+import { useTestSettingsStore } from '@/stores/testSettings'
+import { storeToRefs } from 'pinia'
 
-const submitStepOne = (urlInput) => {
-  testSettings.url = urlInput
-  testStep.value = 2
-}
+const store = useTestSettingsStore()
+const { testSettings, testStep, testCompleted } = storeToRefs(store)
+const { setTestSettings } = store
 
 const urlIsValid = (url) => {
   return isUrlHttp(url)
@@ -17,29 +18,16 @@ const urlIsValid = (url) => {
 const currentHTTPMethod = ref('GET')
 const items = ref([{ name: '', value: '' }])
 const addItem = () => {
-  items.value.push({ value: '' })
+  setTestSettings('body', items.value)
+  items.value.push({ name: '', value: '' })
 }
 const removeItem = (item) => {
   items.value.splice(items.value.indexOf(item), 1)
+  setTestSettings('body', items.value)
 }
 const logOptions = () => {
   console.log(JSON.parse(JSON.stringify(items.value)))
 }
-const testStep = ref(2)
-const testComplete = ref(false)
-const testSettings = ref({
-  url: 'http://www.google.com',
-  duration: 0,
-  concurrentUsers: 1,
-  method: 'GET',
-  headers: {
-    accept: '*/*',
-    cacheControl: 'no-cache',
-    userAgent: 'StressTestTool/1.0.0',
-    contentType: 'application/json'
-  },
-  body: ''
-})
 </script>
 
 <template>
@@ -69,10 +57,10 @@ const testSettings = ref({
         <li class="relative md:flex md:flex-1">
           <CurrentStep v-if="testStep == 1">
             <template #step>01</template>
-            <template #title>Enter URL</template>
+            <template #title>Enter URL and Method</template>
           </CurrentStep>
           <CompletedStep v-if="testStep == 2 || testStep == 3">
-            <template #title>Enter URL</template>
+            <template #title>Enter URL and Method</template>
           </CompletedStep>
           <!-- Arrow separator for lg screens and up -->
           <div class="absolute right-0 top-0 hidden h-full w-5 md:block" aria-hidden="true">
@@ -94,13 +82,13 @@ const testSettings = ref({
         <li class="relative md:flex md:flex-1">
           <CurrentStep v-if="testStep == 2">
             <template #step>02</template>
-            <template #title>Test Settings</template>
+            <template #title>Configure Method Settings</template>
           </CurrentStep>
           <CompletedStep v-if="testStep == 3">
-            <template #title>Test Settings</template>
+            <template #title>Configure Method Settings</template>
           </CompletedStep>
           <UpcomingStep v-if="testStep == 1">
-            <template #title>Test Settings</template>
+            <template #title>Configure Method Settings</template>
             <template #step>02</template>
           </UpcomingStep>
           <!-- Arrow separator for lg screens and up -->
@@ -123,13 +111,13 @@ const testSettings = ref({
         <li class="relative md:flex md:flex-1">
           <CurrentStep v-if="testStep == 3">
             <template #step>03</template>
-            <template #title>Test Results</template>
+            <template #title>Confirm and Run</template>
           </CurrentStep>
-          <CompletedStep v-if="testStep == 3 && testComplete == true">
-            <template #title>Test Results</template>
+          <CompletedStep v-if="testStep == 3 && testCompleted == true">
+            <template #title>Confirm and Run</template>
           </CompletedStep>
           <UpcomingStep v-if="testStep == 1 || testStep == 2">
-            <template #title>Test Results</template>
+            <template #title>Confirm and Run</template>
             <template #step>03</template>
           </UpcomingStep>
         </li>
@@ -299,7 +287,16 @@ const testSettings = ref({
               >
                 Accept Header
               </label>
-              <span class="text-sm text-cyan-600 cursor-pointer">What is an Accept Header?</span>
+              <button
+                class="text-left w-fit"
+                type="button"
+                data-drawer-target="test-settings-help"
+                data-drawer-show="test-settings-help"
+                data-drawer-placement="right"
+                aria-controls="test-settings-help"
+              >
+                <span class="text-sm text-cyan-600"> What is an Accept Header? </span>
+              </button>
             </div>
             <select
               id="countries"
@@ -333,9 +330,16 @@ const testSettings = ref({
               >
                 Cache Control Header
               </label>
-              <span class="text-sm text-cyan-600 cursor-pointer">
-                What is a Cache Control Header?
-              </span>
+              <button
+                class="text-left w-fit"
+                type="button"
+                data-drawer-target="test-settings-help"
+                data-drawer-show="test-settings-help"
+                data-drawer-placement="right"
+                aria-controls="test-settings-help"
+              >
+                <span class="text-sm text-cyan-600"> What is a Cache Control Header? </span>
+              </button>
             </div>
             <select
               id="countries"
@@ -372,9 +376,16 @@ const testSettings = ref({
               >
                 User Agent Header
               </label>
-              <span class="text-sm text-cyan-600 cursor-pointer">
-                What is a User Agent Header?
-              </span>
+              <button
+                class="text-left w-fit"
+                type="button"
+                data-drawer-target="test-settings-help"
+                data-drawer-show="test-settings-help"
+                data-drawer-placement="right"
+                aria-controls="test-settings-help"
+              >
+                <span class="text-sm text-cyan-600"> What is a User Agent Header? </span>
+              </button>
             </div>
             <input
               type="text"
@@ -393,10 +404,18 @@ const testSettings = ref({
               >
                 Content Type Header
               </label>
-              <span class="text-sm text-cyan-600 cursor-pointer">
-                What is a Content Type Header?
-              </span>
+              <button
+                class="text-left w-fit"
+                type="button"
+                data-drawer-target="test-settings-help"
+                data-drawer-show="test-settings-help"
+                data-drawer-placement="right"
+                aria-controls="test-settings-help"
+              >
+                <span class="text-sm text-cyan-600">What is a Content Type Header?</span>
+              </button>
             </div>
+
             <select
               id="countries"
               class="bg-cyan-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
@@ -482,6 +501,7 @@ const testSettings = ref({
           <div></div>
         </div>
       </div>
+
       <!-- NAV BUTTONS -->
       <div class="flex w-full justify-between">
         <button
@@ -496,7 +516,12 @@ const testSettings = ref({
         <button
           type="submit"
           class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="testStep = 3"
+          @click="
+            () => {
+              testStep = 3
+              testSettings.body = items
+            }
+          "
           :disabled="
             (items.length == 0 || items[0].name == '' || items[0].value == '') &&
             (testSettings.method == 'POST' || testSettings.method == 'PUT')
@@ -519,6 +544,79 @@ const testSettings = ref({
         <span class="sr-only">Test</span>
         Back
       </button>
+    </div>
+  </div>
+
+  <!-- drawer component -->
+  <div
+    id="test-settings-help"
+    class="fixed top-0 right-0 z-40 h-screen p-4 overflow-y-auto transition-transform translate-x-full bg-white w-80 dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="drawer-right-label"
+  >
+    <h5
+      id="drawer-right-label"
+      class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400"
+    >
+      Helpful Test Setting Information
+    </h5>
+    <button
+      type="button"
+      data-drawer-hide="test-settings-help"
+      aria-controls="test-settings-help"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white"
+    >
+      <svg
+        class="w-3 h-3"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 14 14"
+      >
+        <path
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+        />
+      </svg>
+      <span class="sr-only">Close menu</span>
+    </button>
+
+    <!-- Explanation of Accept Header -->
+    <div class="flex flex-col space-y-4">
+      <div class="flex flex-col space-y-2">
+        <h1 class="font-semibold text-lg">Accept Header</h1>
+        <span class="text-sm">
+          The Accept request HTTP header indicates which content types the client is able to
+          understand. Browsers set required values for this header based on the context of the
+          request.
+        </span>
+      </div>
+      <div class="flex flex-col space-y-2">
+        <h1 class="font-semibold text-lg">Cache Control Header</h1>
+        <span class="text-sm">
+          The Cache-Control HTTP header field holds directives (instructions) — in both requests and
+          responses — that control caching in browsers and shared caches (e.g. Proxies, CDNs).
+        </span>
+      </div>
+      <div class="flex flex-col space-y-2">
+        <h1 class="font-semibold text-lg">User Agent Header</h1>
+        <span class="text-sm">
+          The User-Agent request header is a characteristic string that lets servers and network
+          peers identify the application, operating system, vendor, and/or version of the requesting
+          user agent.
+        </span>
+      </div>
+      <div class="flex flex-col space-y-2">
+        <h1 class="font-semibold text-lg">Content Type Header</h1>
+        <span class="text-sm">
+          The Content-Type representation header is used to indicate the original media type of the
+          resource (prior to any content encoding applied for sending). In requests, (such as POST
+          or PUT), the client tells the server what type of data is actually sent.
+        </span>
+      </div>
     </div>
   </div>
 </template>
