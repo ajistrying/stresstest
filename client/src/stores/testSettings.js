@@ -3,17 +3,21 @@ import { defineStore } from 'pinia'
 export const useTestSettingsStore = defineStore('testSettings', {
   state: () => ({
     testSettings: {
-      url: '',
+      url: 'https://google.com',
       duration: 0,
-      concurrentUsers: 1,
-      method: 'GET',
+      concurrentUsers: 2,
+      method: 'POST',
       headers: {
         accept: '*/*',
         cacheControl: 'no-cache',
         userAgent: 'StressTestTool/1.0.0',
         contentType: 'application/json'
       },
-      body: []
+      bodyType: 'none',
+      formDataBody: [{ name: '', value: '' }],
+      rawBody: '',
+      jsonBody: '',
+      xmlBody: ''
     },
     testResults: [],
     testRunning: false,
@@ -66,6 +70,18 @@ export const useTestSettingsStore = defineStore('testSettings', {
     },
     setTestStep(testStep) {
       this.testStep = testStep
+    },
+    resetTestSettingPostBodies() {
+      this.testSettings.formDataBody = [{ name: '', value: '' }]
+      this.testSettings.rawBody = ''
+      this.testSettings.jsonBody = ''
+      this.testSettings.xmlBody = ''
+    },
+    addTestSettingPostFormDataBodyPair() {
+      this.testSettings.formDataBody.push({ name: '', value: '' })
+    },
+    removeTestSettingPostFormDataBodyPair(index) {
+      this.testSettings.formDataBody.splice(index, 1)
     },
   }
 })

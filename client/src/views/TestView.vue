@@ -1,32 +1,19 @@
 <script setup>
 import { IconTestPipe, IconArrowLeft, IconArrowRight } from '@tabler/icons-vue'
-import CurrentStep from '../components/CurrentStep.vue'
-import CompletedStep from '../components/CompletedStep.vue'
-import UpcomingStep from '../components/UpcomingStep.vue'
+import PostBodyRadioOptions from '../components/PostBodyRadioOptions.vue'
+import TestingSteps from '@/components/TestingSteps.vue'
+import ConfimAndRunStep from '@/components/ConfimAndRunStep.vue'
 import { ref } from 'vue'
 import isUrlHttp from 'is-url-http'
 import { useTestSettingsStore } from '@/stores/testSettings'
 import { storeToRefs } from 'pinia'
 
 const store = useTestSettingsStore()
-const { testSettings, testStep, testCompleted } = storeToRefs(store)
-const { setTestSettings } = store
+const { testSettings, testStep } = storeToRefs(store)
+const { addTestSettingPostFormDataBodyPair, removeTestSettingPostFormDataBodyPair } = store
 
 const urlIsValid = (url) => {
   return isUrlHttp(url)
-}
-const currentHTTPMethod = ref('GET')
-const items = ref([{ name: '', value: '' }])
-const addItem = () => {
-  setTestSettings('body', items.value)
-  items.value.push({ name: '', value: '' })
-}
-const removeItem = (item) => {
-  items.value.splice(items.value.indexOf(item), 1)
-  setTestSettings('body', items.value)
-}
-const logOptions = () => {
-  console.log(JSON.parse(JSON.stringify(items.value)))
 }
 </script>
 
@@ -41,88 +28,10 @@ const logOptions = () => {
         <span class="sr-only">Log Settings</span>
         Log Settings
       </button>
-      <button
-        @click="logOptions"
-        class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Log Options
-      </button>
     </div>
+
     <!-- Steps -->
-    <nav aria-label="Progress">
-      <ol
-        role="list"
-        class="divide-y divide-gray-300 rounded-md border border-gray-300 md:flex md:divide-y-0"
-      >
-        <li class="relative md:flex md:flex-1">
-          <CurrentStep v-if="testStep == 1">
-            <template #step>01</template>
-            <template #title>Enter URL and Method</template>
-          </CurrentStep>
-          <CompletedStep v-if="testStep == 2 || testStep == 3">
-            <template #title>Enter URL and Method</template>
-          </CompletedStep>
-          <!-- Arrow separator for lg screens and up -->
-          <div class="absolute right-0 top-0 hidden h-full w-5 md:block" aria-hidden="true">
-            <svg
-              class="h-full w-full text-cyan-300"
-              viewBox="0 0 22 80"
-              fill="none"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M0 -2L20 40L0 82"
-                vector-effect="non-scaling-stroke"
-                stroke="currentcolor"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
-        </li>
-        <li class="relative md:flex md:flex-1">
-          <CurrentStep v-if="testStep == 2">
-            <template #step>02</template>
-            <template #title>Configure Method Settings</template>
-          </CurrentStep>
-          <CompletedStep v-if="testStep == 3">
-            <template #title>Configure Method Settings</template>
-          </CompletedStep>
-          <UpcomingStep v-if="testStep == 1">
-            <template #title>Configure Method Settings</template>
-            <template #step>02</template>
-          </UpcomingStep>
-          <!-- Arrow separator for lg screens and up -->
-          <div class="absolute right-0 top-0 hidden h-full w-5 md:block" aria-hidden="true">
-            <svg
-              class="h-full w-full text-gray-300"
-              viewBox="0 0 22 80"
-              fill="none"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M0 -2L20 40L0 82"
-                vector-effect="non-scaling-stroke"
-                stroke="currentcolor"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
-        </li>
-        <li class="relative md:flex md:flex-1">
-          <CurrentStep v-if="testStep == 3">
-            <template #step>03</template>
-            <template #title>Confirm and Run</template>
-          </CurrentStep>
-          <CompletedStep v-if="testStep == 3 && testCompleted == true">
-            <template #title>Confirm and Run</template>
-          </CompletedStep>
-          <UpcomingStep v-if="testStep == 1 || testStep == 2">
-            <template #title>Confirm and Run</template>
-            <template #step>03</template>
-          </UpcomingStep>
-        </li>
-      </ol>
-    </nav>
+    <TestingSteps />
 
     <div v-show="testStep == 1">
       <div class="w-full space-y-6">
@@ -158,13 +67,12 @@ const logOptions = () => {
               <label
                 class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
                 :class="{
-                  'bg-cyan-600 text-white': currentHTTPMethod == 'GET',
+                  'bg-cyan-600 text-white': testSettings.method == 'GET',
                   'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                    currentHTTPMethod != 'GET'
+                    testSettings.method != 'GET'
                 }"
                 @click="
                   () => {
-                    currentHTTPMethod = 'GET'
                     testSettings.method = 'GET'
                   }
                 "
@@ -182,13 +90,12 @@ const logOptions = () => {
               <label
                 class="flex items-center justify-center font-semibold rounded-md border-cyan-500 py-3 px-3 text-md uppercase sm:flex-1 cursor-pointer focus:outline-none"
                 :class="{
-                  'bg-cyan-600 text-white': currentHTTPMethod == 'POST',
+                  'bg-cyan-600 text-white': testSettings.method == 'POST',
                   'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                    currentHTTPMethod != 'POST'
+                    testSettings.method != 'POST'
                 }"
                 @click="
                   () => {
-                    currentHTTPMethod = 'POST'
                     testSettings.method = 'POST'
                   }
                 "
@@ -206,13 +113,12 @@ const logOptions = () => {
               <label
                 class="flex items-center justify-center rounded-md border-cyan-500 py-3 px-3 text-md font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none"
                 :class="{
-                  'bg-cyan-600 text-white': currentHTTPMethod == 'PUT',
+                  'bg-cyan-600 text-white': testSettings.method == 'PUT',
                   'ring-1 ring-inset ring-gray-300 text-white hover:bg-cyan-50 hover:text-cyan-900 transition-colors duration-950':
-                    currentHTTPMethod != 'PUT'
+                    testSettings.method != 'PUT'
                 }"
                 @click="
                   () => {
-                    currentHTTPMethod = 'PUT'
                     testSettings.method = 'PUT'
                   }
                 "
@@ -266,13 +172,7 @@ const logOptions = () => {
     <div v-show="testStep == 2" class="space-y-6">
       <div class="flex flex-col lg:flex-row gap-10">
         <!-- LEFT SIDE -->
-        <div
-          class="space-y-4"
-          :class="{
-            'lg:w-1/2': testSettings.method == 'GET',
-            'lg:w-1/2': testSettings.method == 'POST' || testSettings.method == 'PUT'
-          }"
-        >
+        <div class="space-y-4 lg:w-1/2">
           <div>
             <h1 class="font-semibold text-2xl">HTTP Headers</h1>
             <span class="text-lg"> Choose the HTTP headers you'd like to use for your test </span>
@@ -367,7 +267,7 @@ const logOptions = () => {
             />
           </div>
 
-          <!-- USER AGENT HEADER WITH "StressTestTool/1.0.0 as default" -->
+          <!-- USER AGENT HEADER" -->
           <div>
             <div class="flex flex-col mb-2">
               <label
@@ -395,7 +295,7 @@ const logOptions = () => {
             />
           </div>
 
-          <!-- CONTENT TYPE -->
+          <!-- CONTENT TYPE HEADER -->
           <div v-show="testSettings.method == 'PUT' || testSettings.method == 'POST'">
             <div class="flex flex-col mb-2">
               <label
@@ -450,50 +350,47 @@ const logOptions = () => {
         </div>
 
         <!-- RIGHT SIDE -->
-        <div
-          class="space-y-6"
-          :class="{
-            'lg:w-1/2': testSettings.method == 'GET',
-            'lg:w-1/2': testSettings.method == 'POST' || testSettings.method == 'PUT'
-          }"
-        >
+        <div class="space-y-6 lg:w-1/2">
           <!-- POST BODY OPTIONS -->
           <div class="w-fit" v-show="testSettings.method == 'POST' || testSettings.method == 'PUT'">
             <h1 class="font-semibold text-2xl">HTTP Body</h1>
-            <span class="text-lg"> Add any HTTP body options you'd like to use for your test </span>
+            <span class="text-lg"> Specify the type and contents of your HTTP Body </span>
+            <PostBodyRadioOptions />
 
-            <div class="mt-2 w-fit">
-              <div v-for="item in items" class="flex space-x-2 mb-4">
-                <input
-                  class="text-black border rounded-lg"
-                  placeholder="Enter a key"
-                  type="search"
-                  v-model="item.name"
-                />
-                <input
-                  class="text-black border rounded-lg"
-                  placeholder="Enter a value"
-                  type="search"
-                  v-model="item.value"
-                />
-                <button
-                  @click="() => removeItem(item)"
-                  class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  v-show="items.indexOf(item) != 0"
-                >
-                  Remove
-                </button>
-              </div>
+            <template v-if="testSettings.bodyType == 'form-data'">
+              <div class="mt-2 w-fit">
+                <div v-for="(item, index) in testSettings.formDataBody" class="flex space-x-2 mb-4">
+                  <input
+                    class="text-black border rounded-lg"
+                    placeholder="Enter a key"
+                    type="search"
+                    v-model="item.name"
+                  />
+                  <input
+                    class="text-black border rounded-lg"
+                    placeholder="Enter a value"
+                    type="search"
+                    v-model="item.value"
+                  />
+                  <button
+                    @click="() => removeTestSettingPostFormDataBodyPair(index)"
+                    class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    v-show="testSettings.formDataBody.indexOf(item) != 0"
+                  >
+                    Remove
+                  </button>
+                </div>
 
-              <div class="flex justify-end">
-                <button
-                  @click="addItem"
-                  class="w-full items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Add
-                </button>
+                <div class="flex justify-end">
+                  <button
+                    @click="addTestSettingPostFormDataBodyPair()"
+                    class="w-full items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
-            </div>
+            </template>
           </div>
 
           <!-- ADVANCED SETTINGS -->
@@ -519,11 +416,12 @@ const logOptions = () => {
           @click="
             () => {
               testStep = 3
-              testSettings.body = items
             }
           "
           :disabled="
-            (items.length == 0 || items[0].name == '' || items[0].value == '') &&
+            (testSettings.formDataBody.length == 0 ||
+              testSettings.formDataBody[0].name == '' ||
+              testSettings.formDataBody[0].value == '') &&
             (testSettings.method == 'POST' || testSettings.method == 'PUT')
           "
         >
@@ -534,16 +432,8 @@ const logOptions = () => {
       </div>
     </div>
 
-    <div v-show="testStep == 3">
-      <h1 class="text-2xl">Test Results</h1>
-      <button
-        type="submit"
-        class="flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="testStep = 2"
-      >
-        <span class="sr-only">Test</span>
-        Back
-      </button>
+    <div v-show="store.getTestStep == 3">
+      <ConfimAndRunStep />
     </div>
   </div>
 
