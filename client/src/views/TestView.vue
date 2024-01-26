@@ -517,7 +517,7 @@ const isXml = ref(true)
             (testSettings.method == 'POST' && testSettings.bodyType == 'xml' && !isXml)
           "
         >
-          <span class="sr-only">Test</span>
+          <span class="sr-only">Next</span>
           Next
           <IconArrowRight class="h-5 w-5 text-white ml-1" aria-hidden="true" />
         </button>
