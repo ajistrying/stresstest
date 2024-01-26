@@ -11,7 +11,7 @@ export const useTestSettingsStore = defineStore('testSettings', {
         accept: '*/*',
         cacheControl: 'no-cache',
         userAgent: 'StressTestTool/1.0.0',
-        contentType: 'application/json'
+        contentType: 'none'
       },
       bodyType: 'none',
       formDataBody: [{ name: '', value: '' }],

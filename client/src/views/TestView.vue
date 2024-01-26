@@ -2,9 +2,10 @@
 import { IconTestPipe, IconArrowLeft, IconArrowRight } from '@tabler/icons-vue'
 import PostBodyRadioOptions from '../components/PostBodyRadioOptions.vue'
 import TestingSteps from '@/components/TestingSteps.vue'
-import ConfimAndRunStep from '@/components/ConfimAndRunStep.vue'
+import ConfirmAndRunStep from '@/components/ConfirmAndRunStep.vue'
 import { ref } from 'vue'
 import isUrlHttp from 'is-url-http'
+import { XMLValidator } from 'fast-xml-parser'
 import { useTestSettingsStore } from '@/stores/testSettings'
 import { storeToRefs } from 'pinia'
 
@@ -15,6 +16,17 @@ const { addTestSettingPostFormDataBodyPair, removeTestSettingPostFormDataBodyPai
 const urlIsValid = (url) => {
   return isUrlHttp(url)
 }
+
+function prettyPrint() {
+  var ugly = document.getElementById('jsonBodyTextArea').value
+  var obj = JSON.parse(ugly)
+  var pretty = JSON.stringify(obj, undefined, 4)
+  document.getElementById('jsonBodyTextArea').value = pretty
+  testSettings.jsonBody = pretty
+}
+
+const isJson = ref(true)
+const isXml = ref(true)
 </script>
 
 <template>
@@ -59,8 +71,7 @@ const urlIsValid = (url) => {
 
         <!-- HTTP METHOD -->
         <div>
-          <h1 class="font-semibold text-2xl">HTTP Method</h1>
-          <span class="text-lg"> Choose the HTTP method you'd like to use for your test. </span>
+          <span class="text-xl"> Choose the HTTP method you'd like to use for your test. </span>
           <fieldset class="mt-2 text-white">
             <legend class="sr-only">Choose a memory option</legend>
             <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
@@ -170,12 +181,13 @@ const urlIsValid = (url) => {
     </div>
 
     <div v-show="testStep == 2" class="space-y-6">
-      <div class="flex flex-col lg:flex-row gap-10">
+      <div class="flex flex-col lg:flex-row gap-10 h-100vh">
         <!-- LEFT SIDE -->
         <div class="space-y-4 lg:w-1/2">
           <div>
-            <h1 class="font-semibold text-2xl">HTTP Headers</h1>
-            <span class="text-lg"> Choose the HTTP headers you'd like to use for your test </span>
+            <span class="text-xl font-semibold">
+              Choose the HTTP headers you'd like to use for your test
+            </span>
           </div>
 
           <!-- ACCEPT HEADER OPTION -->
@@ -294,9 +306,17 @@ const urlIsValid = (url) => {
               v-model="testSettings.headers.userAgent"
             />
           </div>
+        </div>
 
+        <!-- RIGHT SIDE -->
+        <div class="space-y-6 lg:w-1/2">
           <!-- CONTENT TYPE HEADER -->
           <div v-show="testSettings.method == 'PUT' || testSettings.method == 'POST'">
+            <div class="mb-4">
+              <span class="text-xl font-semibold">
+                Specify the type and contents of your HTTP Body
+              </span>
+            </div>
             <div class="flex flex-col mb-2">
               <label
                 for="countries"
@@ -320,22 +340,24 @@ const urlIsValid = (url) => {
               id="countries"
               class="bg-cyan-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"
               v-model="testSettings.headers.contentType"
+              @change="
+                () => {
+                  if (testSettings.headers.contentType == 'application/json') {
+                    testSettings.bodyType = 'json'
+                  } else if (testSettings.headers.contentType == 'none') {
+                    testSettings.bodyType = 'none'
+                  } else if (testSettings.headers.contentType == 'application/xml') {
+                    testSettings.bodyType = 'xml'
+                  } else if (testSettings.headers.contentType == 'multipart/form-data') {
+                    testSettings.bodyType = 'form-data'
+                  }
+                }
+              "
             >
-              <option selected value="application/json">application/json</option>
-              <option value="text/html">text/html</option>
-              <option value="text/plain">text/plain</option>
+              <option selected value="none">none</option>
+              <option value="application/json">application/json</option>
               <option value="application/xml">application/xml</option>
-              <option value="application/pdf">application/pdf</option>
-              <option value="image/png">image/png</option>
-              <option value="image/jpeg">image/jpeg</option>
-              <option value="image/gif">image/gif</option>
-              <option value="application/javascript">application/javascript</option>
-              <option value="application/zip">application/zip</option>
-              <option value="application/x-www-form-urlencoded">
-                application/x-www-form-urlencoded
-              </option>
               <option value="multipart/form-data">multipart/form-data</option>
-              <option value="custom">custom</option>
             </select>
             <input
               type="text"
@@ -347,16 +369,12 @@ const urlIsValid = (url) => {
               }"
             />
           </div>
-        </div>
-
-        <!-- RIGHT SIDE -->
-        <div class="space-y-6 lg:w-1/2">
           <!-- POST BODY OPTIONS -->
-          <div class="w-fit" v-show="testSettings.method == 'POST' || testSettings.method == 'PUT'">
-            <h1 class="font-semibold text-2xl">HTTP Body</h1>
-            <span class="text-lg"> Specify the type and contents of your HTTP Body </span>
-            <PostBodyRadioOptions />
-
+          <div
+            class="w-full"
+            v-show="testSettings.method == 'POST' || testSettings.method == 'PUT'"
+          >
+            <!-- TODO: Create the other templates for the other http body options: json, xml,  -->
             <template v-if="testSettings.bodyType == 'form-data'">
               <div class="mt-2 w-fit">
                 <div v-for="(item, index) in testSettings.formDataBody" class="flex space-x-2 mb-4">
@@ -391,11 +409,85 @@ const urlIsValid = (url) => {
                 </div>
               </div>
             </template>
-          </div>
 
-          <!-- ADVANCED SETTINGS -->
-          <!-- DURATION -->
-          <div></div>
+            <template v-if="testSettings.bodyType == 'json'">
+              <div class="mt-2 w-full">
+                <textarea
+                  id="jsonBodyTextArea"
+                  rows="15"
+                  class="block p-2.5 mt-4 w-full text-sm text-gray-900 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:text-white dark:placeholder-gray-400"
+                  :class="{
+                    'focus:ring-red-500 focus:border-red-500 dark:border-red-600 dark:focus:ring-red-500 dark:focus:border-red-500':
+                      !isJson,
+                    'focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:focus:ring-blue-500 dark:focus:border-blue-500':
+                      isJson
+                  }"
+                  placeholder="Enter your json here..."
+                  v-model="testSettings.jsonBody"
+                  @input="
+                    () => {
+                      if (testSettings.jsonBody == '') {
+                        isJson = true
+                      } else {
+                        try {
+                          JSON.parse(testSettings.jsonBody)
+                          isJson = true
+                        } catch (error) {
+                          isJson = false
+                          return
+                        }
+                        isJson = true
+                      }
+                    }
+                  "
+                ></textarea>
+                <div class="flex justify-end mt-4">
+                  <button
+                    class="disabled: flex items-center px-4 py-2 border border-transparent hover:cursor-pointer rounded-lg text-center bg-cyan-600 text-white font-semibold shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="!isJson || testSettings.jsonBody == ''"
+                    @click="prettyPrint"
+                  >
+                    Format
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <template v-if="testSettings.bodyType == 'xml'">
+              <div class="mt-2 w-full">
+                <textarea
+                  id="xmlBodyTextArea"
+                  rows="15"
+                  class="block p-2.5 mt-4 w-full text-sm text-gray-900 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:text-white dark:placeholder-gray-400"
+                  :class="{
+                    'focus:ring-red-500 focus:border-red-500 dark:border-red-600 dark:focus:ring-red-500 dark:focus:border-red-500':
+                      !isXml,
+                    'focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:focus:ring-blue-500 dark:focus:border-blue-500':
+                      isXml
+                  }"
+                  placeholder="Enter your xml here..."
+                  v-model="testSettings.xmlBody"
+                  @input="
+                    () => {
+                      if (testSettings.xmlBody == '') {
+                        isXml = true
+                      } else {
+                        const result = XMLValidator.validate(testSettings.xmlBody, {
+                          allowBooleanAttributes: true
+                        })
+                        if (result === true) {
+                          isXml = true
+                        } else {
+                          isXml = false
+                          return
+                        }
+                      }
+                    }
+                  "
+                ></textarea>
+              </div>
+            </template>
+          </div>
         </div>
       </div>
 
@@ -419,10 +511,10 @@ const urlIsValid = (url) => {
             }
           "
           :disabled="
-            (testSettings.formDataBody.length == 0 ||
-              testSettings.formDataBody[0].name == '' ||
-              testSettings.formDataBody[0].value == '') &&
-            (testSettings.method == 'POST' || testSettings.method == 'PUT')
+            !testSettings.url ||
+            !urlIsValid(testSettings.url) ||
+            (testSettings.method == 'POST' && testSettings.bodyType == 'json' && !isJson) ||
+            (testSettings.method == 'POST' && testSettings.bodyType == 'xml' && !isXml)
           "
         >
           <span class="sr-only">Test</span>
@@ -433,7 +525,7 @@ const urlIsValid = (url) => {
     </div>
 
     <div v-show="store.getTestStep == 3">
-      <ConfimAndRunStep />
+      <ConfirmAndRunStep />
     </div>
   </div>
 
